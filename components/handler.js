@@ -656,7 +656,7 @@ class Handler {
   }
 
   async checkFile (options = this.options) {
-    await axios.get('http://localhost:3000/mods').then(async (response) => {
+    await axios.get(options.clientPackage).then(async (response) => {
       await this.readAllData(response.data, options, '/mods').then(() => console.log('finish check'))
     })
 
@@ -666,7 +666,7 @@ class Handler {
   async readAllData (verifyedData, options, pathFolder) {
     if (!fs.existsSync(options.root + pathFolder)) {
       fs.mkdirSync(options.root + pathFolder)
-      await this.downloadFiles(verifyedData, options, folder)
+      await this.downloadFiles(verifyedData, options, pathFolder)
     } else {
       const files = fs.readdirSync(pathFolder)
       const objClient = []
