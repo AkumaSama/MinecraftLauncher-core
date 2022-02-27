@@ -1,9 +1,12 @@
+import crypto from "crypto";
+
 const fs = require('fs')
 const path = require('path')
 const request = require('request')
 const checksum = require('checksum')
 const Zip = require('adm-zip')
 const child = require('child_process')
+const axios = require("axios");
 let counter = 0
 
 class Handler {
@@ -652,15 +655,120 @@ class Handler {
     } else { return [`${this.options.memory.max}`, `${this.options.memory.min}`] }
   }
 
-  async extractPackage (options = this.options) {
-    if (options.clientPackage.startsWith('http')) {
-      await this.downloadAsync(options.clientPackage, options.root, 'clientPackage.zip', true, 'client-package')
-      options.clientPackage = path.join(options.root, 'clientPackage.zip')
-    }
-    new Zip(options.clientPackage).extractAllTo(options.root, true)
-    if (options.removePackage) fs.unlinkSync(options.clientPackage)
+  async checkFile (options = this.options) {
+    await axios.get('http://localhost:3000/mods').then(async (response) => {
+      await this.readAllData(response.data, options, '/mods').then(() => console.log('finish check'))
+    })
 
     return this.client.emit('package-extract', true)
+  }
+
+  async readAllData (verifyedData, options, pathFolder) {
+    if (!fs.existsSync(options.root + pathFolder)) {
+      fs.mkdirSync(options.root + pathFolder)
+      await this.downloadFiles(verifyedData, options, folder)
+    } else {
+      const files = fs.readdirSync(pathFolder)
+      const objClient = []
+
+      for (let i = 0; i < files.length; i++) {
+        const stat = fs.statSync(pathFolder + files[i])
+        const fileBuffer = fs.readFileSync(pathFolder + files[i])
+        const hashSum = crypto.createHash('md5')
+        hashSum.update(fileBuffer)
+
+        const hex = hashSum.digest('hex')
+
+        objClient.push({
+          fileName: files[i],
+          size: stat.size,
+          md5: hex
+        })
+      }
+
+      const response = this.fileChecker(verifyedData, objClient)
+
+      response.toDelete.forEach((obj) => {
+        fs.unlinkSync(pathFolder + obj.fileName)
+        console.log('suppression de ' + (pathFolder + obj.fileName))
+      })
+
+      for (const obj of response.toDownload) {
+        if (fs.existsSync(pathFolder + obj.fileName)) {
+          fs.unlinkSync(pathFolder + obj.fileName)
+        }
+        await this.downloadFromLink(obj.link)
+      }
+    }
+  }
+
+  async downloadFiles (data, option, folder) {
+    console.log('JE DOIT DONWLOAD LA DATA')
+    for (const obj of data.files) {
+      await this.downloadFromLink(obj.link, option, folder)
+    }
+  }
+
+  async downloadFromLink (link, option, folder) {
+    console.log('download ' + link.split('/').reverse()[0])
+    await this.downloadAsync(link, option.root + folder, link.split('/').reverse()[0], true, 'mods')
+  }
+
+  fileChecker (verifiedData, clientData) {
+    const copiedClientData = []
+    const response = {
+      toDelete: [],
+      toDownload: []
+    }
+
+    clientData.forEach((val) => {
+      copiedClientData.push({ ...val })
+    })
+
+
+    for (let i = 0; i < verifiedData.files.length; i++) {
+      if (this.findFileName(copiedClientData, verifiedData.files[i].fileName)) {
+        if (!this.checkFiles(copiedClientData, verifiedData.files[i])) {
+          response.toDownload.push(verifiedData.files[i])
+        }
+        this.removeFileOnList(verifiedData.files[i].fileName, copiedClientData)
+      } else {
+        response.toDownload.push(verifiedData.files[i])
+      }
+    }
+
+    response.toDelete = copiedClientData
+
+    return response
+  }
+
+  findFileName (data, filename) {
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].fileName === filename) {
+        return true
+      }
+    }
+    return false
+  }
+
+  checkFiles (cData, data) {
+    let objData
+    for (let i = 0; i < cData.length; i++) {
+      if (cData[i].fileName === data.fileName) {
+        objData = cData[i]
+        break
+      }
+    }
+    return objData.md5 === data.md5
+  }
+
+  removeFileOnList (filename, data) {
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].fileName === filename) {
+        data.splice(i, 1)
+        break
+      }
+    }
   }
 }
 

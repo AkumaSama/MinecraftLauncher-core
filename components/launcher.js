@@ -160,8 +160,8 @@ class MCLCore extends EventEmitter {
 
   async extractPackage () {
     if (this.options.clientPackage) {
-      this.emit('debug', `[MCLC]: Extracting client package to ${this.options.root}`)
-      await this.handler.extractPackage()
+      this.emit('debug', `[MCLC]: Checking client file to ${this.options.root}`)
+      await this.handler.checkFile()
     }
   }
 
