@@ -1,5 +1,4 @@
-import crypto from "crypto";
-
+const crypto = require("crypto");
 const fs = require('fs')
 const path = require('path')
 const request = require('request')
@@ -57,7 +56,7 @@ class Handler {
 
       _request.on('error', async (error) => {
         this.client.emit('debug', `[MCLC]: Failed to download asset to ${path.join(directory, name)} due to\n${error}.` +
-                    ` Retrying... ${retry}`)
+            ` Retrying... ${retry}`)
         if (retry) await this.downloadAsync(url, directory, name, false, type)
         resolve()
       })
@@ -85,7 +84,7 @@ class Handler {
 
       file.on('error', async (e) => {
         this.client.emit('debug', `[MCLC]: Failed to download asset to ${path.join(directory, name)} due to\n${e}.` +
-                    ` Retrying... ${retry}`)
+            ` Retrying... ${retry}`)
         if (fs.existsSync(path.join(directory, name))) fs.unlinkSync(path.join(directory, name))
         if (retry) await this.downloadAsync(url, directory, name, false, type)
         resolve()
@@ -147,7 +146,7 @@ class Handler {
     const assetDirectory = path.resolve(this.options.overrides.assetRoot || path.join(this.options.root, 'assets'))
     if (!fs.existsSync(path.join(assetDirectory, 'indexes', `${this.version.assetIndex.id}.json`))) {
       await this.downloadAsync(this.version.assetIndex.url, path.join(assetDirectory, 'indexes'),
-                  `${this.version.assetIndex.id}.json`, true, 'asset-json')
+          `${this.version.assetIndex.id}.json`, true, 'asset-json')
     }
 
     const index = JSON.parse(fs.readFileSync(path.join(assetDirectory, 'indexes', `${this.version.assetIndex.id}.json`), { encoding: 'utf8' }))
@@ -165,7 +164,7 @@ class Handler {
 
       if (!fs.existsSync(path.join(subAsset, hash)) || !await this.checkSum(hash, path.join(subAsset, hash))) {
         await this.downloadAsync(`${this.options.overrides.url.resource}/${subhash}/${hash}`, subAsset, hash,
-          true, 'assets')
+            true, 'assets')
         counter++
         this.client.emit('progress', {
           type: 'assets',
@@ -180,8 +179,8 @@ class Handler {
     if (this.isLegacy()) {
       if (fs.existsSync(path.join(assetDirectory, 'legacy'))) {
         this.client.emit('debug', '[MCLC]: The \'legacy\' directory is no longer used as Minecraft looks ' +
-          'for the resouces folder regardless of what is passed in the assetDirecotry launch option. I\'d ' +
-          `recommend removing the directory (${path.join(assetDirectory, 'legacy')})`)
+            'for the resouces folder regardless of what is passed in the assetDirecotry launch option. I\'d ' +
+            `recommend removing the directory (${path.join(assetDirectory, 'legacy')})`)
       }
 
       const legacyDirectory = path.join(this.options.root, 'resources')
@@ -225,8 +224,8 @@ class Handler {
     if (lib.rules) {
       if (lib.rules.length > 1) {
         if (lib.rules[0].action === 'allow' &&
-                    lib.rules[1].action === 'disallow' &&
-                    lib.rules[1].os.name === 'osx') {
+            lib.rules[1].action === 'disallow' &&
+            lib.rules[1].os.name === 'osx') {
           return this.getOS() === 'osx'
         } else {
           return true
@@ -252,8 +251,8 @@ class Handler {
           if (this.parseRule(lib)) return
 
           const native = this.getOS() === 'osx'
-            ? lib.downloads.classifiers['natives-osx'] || lib.downloads.classifiers['natives-macos']
-            : lib.downloads.classifiers[`natives-${this.getOS()}`]
+              ? lib.downloads.classifiers['natives-osx'] || lib.downloads.classifiers['natives-macos']
+              : lib.downloads.classifiers[`natives-${this.getOS()}`]
 
           natives.push(native)
         }))
@@ -306,8 +305,8 @@ class Handler {
       `-Dforgewrapper.minecraft=${this.options.mcPath}`
     ]
     this.options.customArgs
-      ? this.options.customArgs = this.options.customArgs.concat(forgeWrapperAgrs)
-      : this.options.customArgs = forgeWrapperAgrs
+        ? this.options.customArgs = this.options.customArgs.concat(forgeWrapperAgrs)
+        : this.options.customArgs = forgeWrapperAgrs
   }
 
   isModernForge (json) {
@@ -354,8 +353,8 @@ class Handler {
     // Adding the installer libraries as mavenFiles so MCLC downloads them but doesn't add them to the class paths.
     if (installerJson) {
       json.mavenFiles
-        ? json.mavenFiles = json.mavenFiles.concat(installerJson.libraries)
-        : json.mavenFiles = installerJson.libraries
+          ? json.mavenFiles = json.mavenFiles.concat(installerJson.libraries)
+          : json.mavenFiles = installerJson.libraries
     }
 
     // Holder for the specifc jar ending which depends on the specifc forge version.
@@ -548,12 +547,12 @@ class Handler {
     const type = modification || this.version
 
     let args = type.minecraftArguments
-      ? type.minecraftArguments.split(' ')
-      : type.arguments.game
+        ? type.minecraftArguments.split(' ')
+        : type.arguments.game
     const assetRoot = path.resolve(this.options.overrides.assetRoot || path.join(this.options.root, 'assets'))
     const assetPath = this.isLegacy()
-      ? path.join(this.options.root, 'resources')
-      : path.join(assetRoot)
+        ? path.join(this.options.root, 'resources')
+        : path.join(assetRoot)
 
     const minArgs = this.options.overrides.minArgs || this.isLegacy() ? 5 : 11
     if (args.length < minArgs) args = args.concat(this.version.minecraftArguments ? this.version.minecraftArguments.split(' ') : this.version.arguments.game)
@@ -590,20 +589,20 @@ class Handler {
 
     if (this.options.window) {
       this.options.window.fullscreen
-        ? args.push('--fullscreen')
-        : args.push('--width', this.options.window.width, '--height', this.options.window.height)
+          ? args.push('--fullscreen')
+          : args.push('--width', this.options.window.width, '--height', this.options.window.height)
     }
     if (this.options.server) args.push('--server', this.options.server.host, '--port', this.options.server.port || '25565')
     if (this.options.proxy) {
       args.push(
-        '--proxyHost',
-        this.options.proxy.host,
-        '--proxyPort',
-        this.options.proxy.port || '8080',
-        '--proxyUser',
-        this.options.proxy.username,
-        '--proxyPass',
-        this.options.proxy.password
+          '--proxyHost',
+          this.options.proxy.host,
+          '--proxyPort',
+          this.options.proxy.port || '8080',
+          '--proxyUser',
+          this.options.proxy.username,
+          '--proxyPass',
+          this.options.proxy.password
       )
     }
     if (this.options.customLaunchArgs) args = args.concat(this.options.customLaunchArgs)
@@ -657,7 +656,7 @@ class Handler {
 
   async checkFile (options = this.options) {
     await axios.get(options.clientPackage).then(async (response) => {
-      await this.readAllData(response.data, options, '/mods').then(() => console.log('finish check'))
+      await this.readAllData(response.data, options, '/mods/').then(() => console.log('finish check'))
     })
 
     return this.client.emit('package-extract', true)
@@ -668,12 +667,13 @@ class Handler {
       fs.mkdirSync(options.root + pathFolder)
       await this.downloadFiles(verifyedData, options, pathFolder)
     } else {
-      const files = fs.readdirSync(pathFolder)
+      const files = fs.readdirSync(options.root + pathFolder)
       const objClient = []
 
       for (let i = 0; i < files.length; i++) {
-        const stat = fs.statSync(pathFolder + files[i])
-        const fileBuffer = fs.readFileSync(pathFolder + files[i])
+        const stat = fs.statSync(options.root + pathFolder + files[i])
+        if(stat.isDirectory()) continue
+        const fileBuffer = fs.readFileSync(options.root + pathFolder + files[i])
         const hashSum = crypto.createHash('md5')
         hashSum.update(fileBuffer)
 
@@ -689,15 +689,15 @@ class Handler {
       const response = this.fileChecker(verifyedData, objClient)
 
       response.toDelete.forEach((obj) => {
-        fs.unlinkSync(pathFolder + obj.fileName)
-        console.log('suppression de ' + (pathFolder + obj.fileName))
+        fs.unlinkSync(options.root + pathFolder + obj.fileName)
+        console.log('suppression de ' + (options.root + pathFolder + obj.fileName))
       })
 
       for (const obj of response.toDownload) {
-        if (fs.existsSync(pathFolder + obj.fileName)) {
-          fs.unlinkSync(pathFolder + obj.fileName)
+        if (fs.existsSync(options.root + pathFolder + obj.fileName)) {
+          fs.unlinkSync(options.root + pathFolder + obj.fileName)
         }
-        await this.downloadFromLink(obj.link)
+        await this.downloadFromLink(obj.link, options, pathFolder)
       }
     }
   }
